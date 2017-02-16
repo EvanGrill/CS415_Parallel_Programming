@@ -4,7 +4,8 @@
 
 #define MASTER 0
 #define MESSAGE_COUNT 1000000
-#define BUFFER_COUNT 5000
+#define MAX_BUFFER 5000
+#define BUFFER_COUNT 1000;
 
 int main( int argc, char** argv )
 {
@@ -93,25 +94,28 @@ int main( int argc, char** argv )
 
 		fprintf( output, "buffer_size, time\r\n" );
 
-		for( i = 1; i <= BUFFER_COUNT; i++ )
+		for( i = 1; i <= MAX_BUFFER; i++ )
 		{
 			send_buffer = malloc( sizeof(int) * i );
 			recv_buffer = malloc( sizeof(int) * i );
 			
 			start_time = MPI_Wtime( );
 
-			if( task_id == MASTER )
+			for( j=0; j < BUFFER_COUNT; j++ )
 			{
-				MPI_Send( send_buffer, i, MPI_INT, 1, 0, MPI_COMM_WORLD );
-			}
-			else
-			{
-				MPI_Recv( recv_buffer, i, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+				if( task_id == MASTER )
+				{
+					MPI_Send( send_buffer, i, MPI_INT, 1, 0, MPI_COMM_WORLD );
+				}
+				else
+				{
+					MPI_Recv( recv_buffer, i, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+				}
 			}
 
 			end_time = MPI_Wtime( );
 
-			fprintf( output, "%d,%.10f\r\n", i, ( end_time - start_time ) );
+			fprintf( output, "%d,%.10f\r\n", i, ( end_time - start_time ) / BUFFER_COUNT );
 		}
 
 		fclose( output );
