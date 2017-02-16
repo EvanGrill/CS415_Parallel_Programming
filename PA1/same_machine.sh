@@ -8,4 +8,4 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=2
 
-srun --mpi=pmi2 ./main
+srun ./build/main
