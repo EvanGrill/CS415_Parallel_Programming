@@ -106,7 +106,7 @@ int main( int argc, char** argv )
 			}
 			else
 			{
-				MPI_Recv( recv_buffer, i, MPI_INT, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+				MPI_Recv( recv_buffer, i, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 			}
 
 			end_time = MPI_Wtime( );
