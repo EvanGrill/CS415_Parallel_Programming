@@ -114,7 +114,7 @@ int main( int argc, char** argv )
 			fprintf( output, "%d,%.10f\r\n", i, ( end_time - start_time ) );
 		}
 
-		fclose;
+		fclose( output );
 	}
 
 	// close MPI
