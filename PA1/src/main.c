@@ -9,14 +9,14 @@
 
 int main( int argc, char** argv )
 {
-	double start_time, end_time;
+	double start_time, end_time, sum_time;
 	int num_tasks, task_id, length;
 	char hostname[MPI_MAX_PROCESSOR_NAME];
 	int send_value, recv_value;
 	int i, j;
 	int mode;
-	int* send_buffer;
-	int* recv_buffer;
+	int send_buffer[MAX_BUFFER];
+	int recv_buffer[MAX_BUFFER];
 
 	MPI_Init( &argc, &argv );
 	MPI_Comm_size( MPI_COMM_WORLD, &num_tasks );
@@ -52,70 +52,77 @@ int main( int argc, char** argv )
 
 	if( mode == 1 )
 	{
-		start_time = MPI_Wtime( );
-
+		sum_time = 0.0;
 		for( i = 0; i < MESSAGE_COUNT; i++ )
 		{
 			send_value = i;
 			if( task_id == MASTER )
 			{
+				start_time = MPI_Wtime( );
 				MPI_Send( &send_value, 1, MPI_INT, 1, 0, MPI_COMM_WORLD );
 				MPI_Recv( &send_value, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-	//			printf( "Message received by: %d\n", task_id );
+				end_time = MPI_Wtime( );
+				sum_time += end_time - start_time;
 			}
 			else if( task_id == 1 )
 			{
 				MPI_Recv( &recv_value, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-	//			printf( "Message received by: %d\n", task_id );
 				MPI_Send( &recv_value, 1, MPI_INT, 0, 0, MPI_COMM_WORLD );
 			}
 		
 		}
 
-		end_time = MPI_Wtime( );
+		
 
 		if( task_id == MASTER )
 		{
 			printf( "Messages Sent: %d\n", MESSAGE_COUNT );
-			printf( "Total time: %.10f secs\n", (end_time - start_time) );
-			printf( "Average Round Trip: %.10f secs\n", (end_time - start_time) / MESSAGE_COUNT );
+			printf( "Total time: %.10f secs\n", sum_time );
+			printf( "Average Round Trip: %.10f secs\n", sum_time / MESSAGE_COUNT );
 		}
 	}
 	else
 	{
-		FILE* output = fopen( "buffer_test.csv", "w" );
-
-		if( !output )
+		if( task_id == MASTER )
 		{
-			printf( "Unable to write to file.\n" );
-			MPI_Finalize( );
-			return 0;
-		}
+			FILE* output = fopen( "buffer_test.csv", "w" );
 
-		fprintf( output, "buffer_size, time\r\n" );
+			if( !output )
+			{
+				printf( "Unable to write to file.\n" );
+				MPI_Finalize( );
+				return 0;
+			}
+
+			fprintf( output, "buffer_size, time\r\n" );
+		}
 
 		for( i = 1; i <= MAX_BUFFER; i++ )
 		{
-			send_buffer = malloc( sizeof(int) * i );
-			recv_buffer = malloc( sizeof(int) * i );
-			
-			start_time = MPI_Wtime( );
-
+			if( task_id = MASTER )
+			{
+				sum_time = 0.0;
+			}
 			for( j=0; j < BUFFER_COUNT; j++ )
 			{
 				if( task_id == MASTER )
 				{
+					start_time = MPI_Wtime( );
 					MPI_Send( send_buffer, i, MPI_INT, 1, 0, MPI_COMM_WORLD );
+					MPI_Recv( send_buffer, i, MPI_INT, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+					end_time = MPI_Wtime( );
+					sum_time += endtime - start_time;
 				}
 				else
 				{
 					MPI_Recv( recv_buffer, i, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+					MPI_Send( send_buffer, i, MPI_INT, 0, 0, MPI_COMM_WORLD );
 				}
 			}
-
-			end_time = MPI_Wtime( );
-
-			fprintf( output, "%d,%.10f\r\n", i, ( end_time - start_time ) / BUFFER_COUNT );
+			if( task_id == MASTER )
+			{
+				fprintf( output, "%d,%.10f\r\n", i, sum_time / BUFFER_COUNT );
+			}
 		}
 
 		fclose( output );
