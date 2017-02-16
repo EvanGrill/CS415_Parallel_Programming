@@ -10,7 +10,6 @@ int main( int argc, char** argv )
 	double start_time, end_time;
 	int num_tasks, task_id, length;
 	char hostname[MPI_MAX_PROCESSOR_NAME];
-	int send_result, recv_result;
 	int send_value, recv_value;
 	int i;
 
@@ -60,4 +59,5 @@ int main( int argc, char** argv )
 
 	// close MPI
 	MPI_Finalize();
+	return 0;
 }
