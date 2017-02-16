@@ -54,8 +54,8 @@ int main( int argc, char** argv )
 	if( task_id == MASTER )
 	{
 		printf( "Messages Sent: %d\n", MESSAGE_COUNT );
-		printf( "Total time: %.10f\n", (end_time - start_time) );
-		printf( "Average Round Trip: %.10f\n", (end_time - start_time) / MESSAGE_COUNT );
+		printf( "Total time: %.10f secs\n", (end_time - start_time) );
+		printf( "Average Round Trip: %.10f secs\n", (end_time - start_time) / MESSAGE_COUNT );
 	}
 
 	// close MPI
