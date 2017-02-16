@@ -13,7 +13,7 @@ int main( int argc, char** argv )
 	int num_tasks, task_id, length;
 	char hostname[MPI_MAX_PROCESSOR_NAME];
 	int send_value, recv_value;
-	int i;
+	int i, j;
 	int mode;
 	int* send_buffer;
 	int* recv_buffer;
