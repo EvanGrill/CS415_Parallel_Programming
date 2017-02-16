@@ -7,3 +7,5 @@ if [ ! -d "$BUILD_DIR" ]; then
 fi
 cd build
 cp ../makefile .
+
+make
