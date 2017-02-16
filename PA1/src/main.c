@@ -100,10 +100,7 @@ int main( int argc, char** argv )
 
 		for( i = 1; i <= MAX_BUFFER; i++ )
 		{
-			if( task_id == MASTER )
-			{
-				sum_time = 0.0;
-			}
+			sum_time = 0.0;
 			for( j=0; j < BUFFER_COUNT; j++ )
 			{
 				if( task_id == MASTER )
