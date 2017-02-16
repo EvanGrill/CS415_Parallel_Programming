@@ -83,9 +83,10 @@ int main( int argc, char** argv )
 	}
 	else
 	{
+		FILE* output;
 		if( task_id == MASTER )
 		{
-			FILE* output = fopen( "buffer_test.csv", "w" );
+			output = fopen( "buffer_test.csv", "w" );
 
 			if( !output )
 			{
@@ -111,7 +112,7 @@ int main( int argc, char** argv )
 					MPI_Send( send_buffer, i, MPI_INT, 1, 0, MPI_COMM_WORLD );
 					MPI_Recv( send_buffer, i, MPI_INT, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 					end_time = MPI_Wtime( );
-					sum_time += endtime - start_time;
+					sum_time += end_time - start_time;
 				}
 				else
 				{
