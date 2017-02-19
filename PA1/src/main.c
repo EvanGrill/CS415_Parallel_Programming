@@ -4,7 +4,7 @@
 
 #define MASTER 0
 #define MESSAGE_COUNT 1000000
-#define MAX_BUFFER 75000
+#define MAX_BUFFER 10000
 #define BUFFER_COUNT 100
 
 int main( int argc, char** argv )
