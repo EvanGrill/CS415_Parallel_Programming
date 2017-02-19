@@ -3,3 +3,4 @@ PA*/build/*
 
 # Any executables
 *.out
+main
