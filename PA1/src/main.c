@@ -84,7 +84,7 @@ int main( int argc, char** argv )
 	else
 	{
 		if( task_id == MASTER )
-		{}
+		{
 			printf( "buffer_size, time\r\n" );
 		}
 
