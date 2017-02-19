@@ -83,19 +83,9 @@ int main( int argc, char** argv )
 	}
 	else
 	{
-		FILE* output;
 		if( task_id == MASTER )
-		{
-			output = fopen( "buffer_test.csv", "w" );
-
-			if( !output )
-			{
-				printf( "Unable to write to file.\n" );
-				MPI_Finalize( );
-				return 0;
-			}
-
-			fprintf( output, "buffer_size, time\r\n" );
+		{}
+			printf( "buffer_size, time\r\n" );
 		}
 
 		for( i = 1; i <= MAX_BUFFER; i++ )
@@ -114,16 +104,14 @@ int main( int argc, char** argv )
 				else
 				{
 					MPI_Recv( recv_buffer, i, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-					MPI_Send( send_buffer, i, MPI_INT, 0, 0, MPI_COMM_WORLD );
+					MPI_Send( recv_buffer, i, MPI_INT, 0, 0, MPI_COMM_WORLD );
 				}
 			}
 			if( task_id == MASTER )
 			{
-				fprintf( output, "%d,%.10f\r\n", i, sum_time / BUFFER_COUNT );
+				printf( "%d,%.10f\r\n", i, sum_time / BUFFER_COUNT );
 			}
 		}
-
-		fclose( output );
 	}
 
 	// close MPI

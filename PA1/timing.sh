@@ -8,4 +8,5 @@
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=1
 
-srun ./build/main 2
+rm -f buffer_test.csv
+srun ./build/main 2 > buffer_test.csv
