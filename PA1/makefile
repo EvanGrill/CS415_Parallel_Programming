@@ -6,7 +6,7 @@ LIBS=-lpmi
 FILE=../src/main.c
 # uncomment below if/when you have a folder called include that holds potential header files
 #INCLUDES=-I../include
-OUTPUT=main
+OUTPUT=./build/main
 
 all: $(OUTPUT)
 
