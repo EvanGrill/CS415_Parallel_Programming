@@ -3,7 +3,7 @@
 To build this project, run the build script.
 
 ```
-$ ./buildscript.sh.
+$ ./buildscript.sh
 ```
 
 This will build the file in the `./build` directory.
