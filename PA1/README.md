@@ -9,7 +9,7 @@ $ ./buildscript.sh.
 This will build the file in the `./build` directory.
 
 ## Running
-To run this project, rund the corresponding script using sbatch.
+To run this project, rund the corresponding script using `sbatch`.
 
 ```
 $ sbatch ./One_box.sh
