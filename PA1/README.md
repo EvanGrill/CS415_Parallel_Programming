@@ -1,6 +1,6 @@
 # PA1: Ping Pong
 ## Building
-To build this project, run the build build build script.
+To build this project, run the build script.
 
 ```
 $ ./buildscript.sh.
