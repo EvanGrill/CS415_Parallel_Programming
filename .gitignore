@@ -4,3 +4,7 @@ PA*/build/*
 # Any executables
 *.out
 main
+
+#Miscellaneous files
+buffer_test_allruns.csv
+buffer_test.csv

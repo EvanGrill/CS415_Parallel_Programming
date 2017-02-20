@@ -8,4 +8,4 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=2
 
-srun ./build/main
+srun ./build/main 1
