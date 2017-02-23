@@ -18,4 +18,4 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	$(CC) $(CFLAGS) -c -o $@ $< $(INC)
 
 clean:
-	$(RM) -r $(BUILDDIR) $(TARGET) *.csv
+	$(RM) -r $(BUILDDIR) $(TARGET) *.csv slurm-*
