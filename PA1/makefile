@@ -1,21 +1,21 @@
-# set flags and compiler, as well as file var
-CC=mpicc
-CXXFLAGS=-Wall
-LIBS=-lpmi
-# feel free to either add files here (for more compilcated src's), or create more vars, or just manually type them in. Up to you.
-FILE=../src/main.c
-# uncomment below if/when you have a folder called include that holds potential header files
-#INCLUDES=-I../include
-OUTPUT=./build/main
+CC = mpicc
+SRCDIR := src
+BUILDDIR := build
+TARGET := ./build/main
 
-all: $(OUTPUT)
+SRCEXT := c
+SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
+CFLAGS := -Wall
+LIB := -lpmi
+INC := -I include
 
-$(OUTPUT): $(FILE)
-	$(CC) $(CXXFLAGS) -o $(OUTPUT) $(FILE) $(LIBS)
+$(TARGET): $(OBJECTS)
+	$(CC) $^ -o $(TARGET) $(LIB)
 
-# use this to run
-run: $(OUTPUT)
-	srun -n16 $(OUTPUT)
+$(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
+	@mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) -c -o $@ $< $(INC)
 
 clean:
-	-@if rm $(OUTPUT) 2>/dev/null || true; then echo "Cleaned"; else echo "Nothing to clean"; fi
+	$(RM) -r $(BUILDDIR) $(TARGET) *.csv
