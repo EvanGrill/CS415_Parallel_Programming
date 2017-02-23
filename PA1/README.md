@@ -1,12 +1,12 @@
 # PA1: Ping Pong
 ## Building
-To build this project, run the build script.
+To build this project, type `make`.
 
 ```
-$ ./buildscript.sh
+$ make
 ```
 
-This will build the file in the `./build` directory.
+This will build the program in the root directory.
 
 ## Running
 To run this project, rund the corresponding script using `sbatch`.
