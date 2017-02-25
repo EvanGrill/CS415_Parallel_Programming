@@ -1,7 +1,6 @@
-# Example Parallel Programming Programs
-## This is for use at the University of Nevada, Reno CS 415/615 Parallel Computing Class
-Any students in that class follow the instructions at [**Github Setup**](https://github.com/cs415-615/template/wiki/Github-Setup) to begin. This is part of the first assignment in the class and necessary for turning in assignments throughout the semester.
+# CS 415: Parallel Computing
+## Evan Grill - Spring 2017
 
-Read through the Wiki on this repository to understand how each class works. This Wiki focuses on the code in PA0.
-
-# Projects
+This repository contains all the programming assignements
+for CS 415 for Spring 2017.  If this repository is public,
+then it is no longer being maintained.
