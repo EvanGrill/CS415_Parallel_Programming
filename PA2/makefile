@@ -7,7 +7,7 @@ SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -Wall -std=c++11
-LIB := -lmpi
+LIB := -lpmi
 INC := -I include
 
 $(TARGET): $(OBJECTS)

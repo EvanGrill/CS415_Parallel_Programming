@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --ntasks=16
-#SBATCH --mem=16384MB
+#SBATCH --ntasks=96
+#SBATCH --mem=32768MB
 #SBATCH --time=00:30:00
 #SBATCH --mail-user=grille@unr.edu
 #SBATCH --mail-type=FAIL
