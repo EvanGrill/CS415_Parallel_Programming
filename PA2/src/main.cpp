@@ -135,6 +135,7 @@ int main( int argc, char** argv )
 	
 	if( num_tasks == 1 )
 	{
+		cout << "Sequential Mode" << endl;
 		start_time = MPI_Wtime( );
 
 		for( int i = 0; i < width; i++ )
@@ -153,6 +154,7 @@ int main( int argc, char** argv )
 	{
 		if( task_id == 0 )
 		{
+			cout << "Parallel Mode" << endl;
 			uint8_t completed[height];
 			int next;
 			MPI_Status recv_status;
