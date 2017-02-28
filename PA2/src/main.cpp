@@ -107,7 +107,6 @@ int main( int argc, char** argv )
 			
 */			pixels[i][j] = 255 - (index * 10) % 255;
 		}
-		cout << "row " << i << " complete" << endl;
 	}
 
 	end_time = MPI_Wtime( );
