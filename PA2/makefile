@@ -1,4 +1,4 @@
-CC = g++
+CC = mpic++
 SRCDIR := src
 BUILDDIR := build
 TARGET := ./build/main
@@ -7,7 +7,7 @@ SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -Wall -std=c++11
-LIB := # -lpmi
+LIB := -lpmi
 INC := -I include
 
 $(TARGET): $(OBJECTS)
