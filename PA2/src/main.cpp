@@ -147,7 +147,6 @@ int main( int argc, char** argv )
 		}
 
 		end_time = MPI_Wtime( );
-		cout << end_time - start_time << endl;
 	}
 	else
 	{
