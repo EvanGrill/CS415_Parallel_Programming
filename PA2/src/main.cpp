@@ -154,7 +154,7 @@ int main( int argc, char** argv )
 	{
 		if( task_id == 0 )
 		{
-			cout << "Parallel Mode" << endl;
+			cout << "Task: " << task_id << "Parallel Mode" << endl;
 			uint8_t completed[height];
 			int next;
 			MPI_Status recv_status;
