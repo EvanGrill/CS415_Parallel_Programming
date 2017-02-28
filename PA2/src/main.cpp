@@ -72,7 +72,6 @@ unsigned char** initImage( int width, int height )
 
 int main( int argc, char** argv )
 {
-	unsigned char** pixels = initImage( WIDTH, HEIGHT );
 	int index;
 	double start_time, end_time;
 	int num_tasks, task_id, length;
@@ -93,6 +92,7 @@ int main( int argc, char** argv )
 	int width = atoi( argv[2] );
 	int height = atoi( argv[3] );
 	int iterations = atoi( argv[4] );
+	unsigned char** pixels = initImage( width, height );
 
 	start_time = MPI_Wtime( );
 
