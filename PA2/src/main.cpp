@@ -110,6 +110,7 @@ int main( int argc, char** argv )
 		}
 
 		end_time = MPI_Wtime( );
+		cout << end_time - start_time << endl;
 	}
 	else
 	{
@@ -122,13 +123,13 @@ int main( int argc, char** argv )
 			}
 
 			end_time = MPI_Wtime( );
+			cout << end_time - start_time << endl;
 		}
 		else
 		{
 
 		}
 	}
-	cout << end_time - start_time << endl;
 
 	pim_write_black_and_white( filename.c_str( ), width, height,
 							   (const unsigned char**) pixels );
