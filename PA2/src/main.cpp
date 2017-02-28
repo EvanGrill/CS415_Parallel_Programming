@@ -116,7 +116,7 @@ int main( int argc, char** argv )
 		if( task_id == 0 )
 		{
 			start_time = MPI_Wtime( );
-			for( int i = 1; i < num_tasks - 1)
+			for( int i = 1; i < num_tasks - 1; i++ )
 			{
 				
 			}
