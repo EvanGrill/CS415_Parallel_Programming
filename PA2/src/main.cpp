@@ -96,19 +96,38 @@ int main( int argc, char** argv )
 	string filename = argv[4];
 	unsigned char** pixels = initImage( width, height );
 	
-	start_time = MPI_Wtime( );
-
-	for( int i = 0; i < width; i++ )
+	if( num_tasks < 2 )
 	{
-		for( int j = 0; j < height; j++ )
+		start_time = MPI_Wtime( );
+
+		for( int i = 0; i < width; i++ )
 		{
-			index = calc_pixel( i, j, width, height, iters );
-			pixels[i][j] = 255 - (index * 10) % 255;
+			for( int j = 0; j < height; j++ )
+			{
+				index = calc_pixel( i, j, width, height, iters );
+				pixels[i][j] = 255 - (index * 10) % 255;
+			}
+		}
+
+		end_time = MPI_Wtime( );
+	}
+	else
+	{
+		if( task_id == 0 )
+		{
+			start_time = MPI_Wtime( );
+			for( int i = 1; i < num_tasks - 1)
+			{
+				
+			}
+
+			end_time = MPI_Wtime( );
+		}
+		else
+		{
+
 		}
 	}
-
-	end_time = MPI_Wtime( );
-
 	cout << end_time - start_time << endl;
 
 	pim_write_black_and_white( filename.c_str( ), width, height,
