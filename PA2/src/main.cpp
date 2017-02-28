@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 #include <mpi.h>
 using namespace std;
 
@@ -89,23 +90,20 @@ int main( int argc, char** argv )
 		return 0;
 	}
 
-	int width = atoi( argv[2] );
-	int height = atoi( argv[3] );
-	int iterations = atoi( argv[4] );
+	int width = atoi( argv[1] );
+	int height = atoi( argv[2] );
+	int iters = atoi( argv[3] );
+	string filename = argv[4];
 	unsigned char** pixels = initImage( width, height );
-
+	
 	start_time = MPI_Wtime( );
 
 	for( int i = 0; i < width; i++ )
 	{
 		for( int j = 0; j < height; j++ )
 		{
-			index = calc_pixel( j, i, width, height, iterations );
-/*			red[i][j] = (unsigned char) colorList[index].red;
-			blue[i][j] = (unsigned char) colorList[index].blue;
-			green[i][j] = (unsigned char) colorList[index].green;
-			
-*/			pixels[i][j] = 255 - (index * 10) % 255;
+			index = calc_pixel( i, j, width, height, iters );
+			pixels[i][j] = 255 - (index * 10) % 255;
 		}
 	}
 
@@ -113,7 +111,7 @@ int main( int argc, char** argv )
 
 	cout << end_time - start_time << endl;
 
-	pim_write_black_and_white( argv[5], width, height,
+	pim_write_black_and_white( filename.c_str( ), width, height,
 							   (const unsigned char**) pixels );
 
 	MPI_Finalize( );
