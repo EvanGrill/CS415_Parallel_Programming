@@ -6,4 +6,4 @@
 #SBATCH --mail-user=grille@unr.edu
 #SBATCH --mail-type=FAIL
 
-srun ./build/main 25000 25000 256 sequential.pgm
+srun ./build/main 1000 1000 1000 sequential.pgm
