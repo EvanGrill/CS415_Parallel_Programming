@@ -120,9 +120,9 @@ int main( int argc, char** argv )
 	MPI_Comm_rank( MPI_COMM_WORLD, &task_id );
 	MPI_Get_processor_name( hostname, &length );
 
-	if( argc < 6 || argc > 6 )
+	if( argc < 5 || argc > 5 )
 	{
-		cout << "Usage: main [width] [height] [iterations] [rows] [filename]" << endl;
+		cout << "Usage: main [width] [height] [iterations] [filename]" << endl;
 		MPI_Finalize();
 		return 0;
 	}
@@ -130,8 +130,7 @@ int main( int argc, char** argv )
 	int width = atoi( argv[1] );
 	int height = atoi( argv[2] );
 	int iters = atoi( argv[3] );
-	int rows = atoi( argv[4] );
-	string filename = argv[5];
+	string filename = argv[4];
 	unsigned char** pixels = initImage( width, height );
 	
 	if( num_tasks == 1 )
@@ -158,6 +157,7 @@ int main( int argc, char** argv )
 			MPI_Status recv_status;
 			int send_buffer[2];
 			int recv_buffer[2];
+			int* return_buffer;
 			bool shutdown = false;
 
 			for( int i = 0; i < height; i++ )
@@ -170,67 +170,39 @@ int main( int argc, char** argv )
 			{
 				next = nextRow( completed, height );	
 				send_buffer[0] = next;
-				send_buffer[1] = rows;
-				for( int i = 0; i < rows; i++ )
-				{
-					completed[next + i] = SENT;
-				}
+				send_buffer[1] = 1;
+				completed[next] = SENT;
 				MPI_Send( send_buffer, 2, MPI_INT, i, SENT, MPI_COMM_WORLD );
-				cout << "Gave rows " << next << " and " << next + 1 << " to process " << i << "." << endl;
 			}
 			while( !shutdown )
 			{
+				//cout << task_id << endl;
 				MPI_Recv( &recv_buffer, 2, MPI_INT, MPI_ANY_SOURCE, COMPLETE, MPI_COMM_WORLD, &recv_status );
 				int source = recv_status.MPI_SOURCE;
 				int first_row = recv_buffer[0];
-				int num_rows = recv_buffer[1];
-				
-				int** return_buffer = new int*[width];
-				for( int i = 0; i < width; i++ )
-				{
-					return_buffer[i] = new int[num_rows];
-				}
-				for( int i = 0; i < num_rows; i++ )
-				{
-					MPI_Recv( return_buffer[i], width, MPI_INT, source, COMPLETE, MPI_COMM_WORLD, &recv_status );
-				}
-				
-				for( int j = 0; j < num_rows; j++ )
-				{
-					if ( completed[first_row + j] != COMPLETE )
-					{
-						for( int i = 0; i < width; i++ )
-						{
-							pixels[i][first_row + j] = return_buffer[i][j];
-						}
-						completed[first_row + j] = COMPLETE;
-					}
-				}
+//				int num_rows = recv_buffer[1];
 
-				for( int i = 0; i < width; i++ )
+				return_buffer = new int[width];
+				MPI_Recv( return_buffer, width, MPI_INT, source, COMPLETE, MPI_COMM_WORLD, &recv_status );
+
+				if( completed[first_row] != COMPLETE )
 				{
-					delete[] return_buffer[i];
+					for( int i = 0; i < width; i++ )
+					{
+						pixels[i][first_row] = 255 - return_buffer[i] * 10 % 255 ;
+					//	printf( "%d ", pixels[i][first_row] );
+					}
+					completed[first_row] = COMPLETE;
 				}
-				delete[] return_buffer;
+				delete return_buffer;
 
 				if( !isComplete( completed, height ) )
 				{
 					next = nextRow( completed, height );	
 					send_buffer[0] = next;
-					if( next + rows >= height )
-					{
-						send_buffer[1] = height - next;
-					}
-					else
-					{
-						send_buffer[1] = rows;
-					}
-					for( int i = 0; i < send_buffer[1]; i++ )
-					{
-						completed[send_buffer[0] + i] = SENT;
-					}
+					send_buffer[1] = 1;
+					completed[next] = SENT;
 					MPI_Send( send_buffer, 2, MPI_INT, source, SENT, MPI_COMM_WORLD );
-					cout << "Gave rows " << next << " and " << next + 1 << " to process " << source << "." << endl;
 				}
 				else
 				{
@@ -249,6 +221,7 @@ int main( int argc, char** argv )
 			bool shutdown = false;
 			MPI_Status recv_status;
 			int recv_buffer[2];
+			int* return_buffer;
 
 			while( !shutdown )
 			{
@@ -260,42 +233,23 @@ int main( int argc, char** argv )
 				else
 				{	
 					int first_row = recv_buffer[0];
-					int num_rows = recv_buffer[1];
-					int **return_buffer = new int*[width];
+//					int num_rows = recv_buffer[1];
+					return_buffer = new int[width];
+
 					for( int i = 0; i < width; i++ )
 					{
-						return_buffer[i] = new int[num_rows];
-					}
-					for( int j = 0; j < num_rows; j++ )
-					{
-						for( int i = 0; i < width; i++ )
-						{
-							return_buffer[i][first_row + j] = calc_pixel( first_row + j, i, width, height, iters );
-						}
+						return_buffer[i] = calc_pixel( first_row, i, width, height, iters );
 					}
 					MPI_Send( recv_buffer, 2, MPI_INT, 0, COMPLETE, MPI_COMM_WORLD );
-					for( int i = 0; i < num_rows; i++ )
-					{
-						MPI_Send( return_buffer[i], width, MPI_INT, 0, COMPLETE, MPI_COMM_WORLD );
-					}
-					for( int i = 0; i < num_rows; i++ )
-					{
-						delete[] return_buffer[i];
-					}
-					delete[] return_buffer;
+					MPI_Send( return_buffer, width, MPI_INT, 0, COMPLETE, MPI_COMM_WORLD );
+
+					delete return_buffer;
 				}
 			}
 		}
 	}
 	if( task_id == 0 )
 	{
-		for( int i = 0; i < width; i++ )
-		{
-			for( int j = 0; j < height; j++ )
-			{
-				pixels[i][j] = 255 - pixels[i][j] * 10 % 255 ;
-			}
-		}
 		pim_write_black_and_white( filename.c_str( ), width, height,
 							   (const unsigned char**) pixels );
 		cout << end_time - start_time << endl;
