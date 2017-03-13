@@ -85,19 +85,6 @@ void delImage( unsigned char** image, int width, int height )
 	delete[] image;
 }
 
-bool isComplete( uint8_t list[], int size )
-{
-	for( int i = 0; i < size; i++ )
-	{
-		if( list[i] != COMPLETE )
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
 int nextRow( uint8_t list[], int size )
 {
 	for( int i = 0; i < size; i++ )
@@ -115,6 +102,20 @@ int nextRow( uint8_t list[], int size )
 		}
 	}
 	return -1;
+}
+
+bool isComplete( uint8_t list[], int size )
+{
+/*	for( int i = 0; i < size; i++ )
+	{
+		if( list[i] != COMPLETE )
+		{
+			return false;
+		}
+	}
+
+	return true; */
+	return nextRow( list, size ) == -1;
 }
 
 int main( int argc, char** argv )
@@ -143,7 +144,7 @@ int main( int argc, char** argv )
 	string filename = argv[5];
 	unsigned char** pixels = initImage( width, height );
 	
-	if( num_tasks == 1 )
+	if( num_tasks < 2 )
 	{
 		start_time = MPI_Wtime( );
 
@@ -276,19 +277,19 @@ int main( int argc, char** argv )
 //					printf( "Send from %d\n", task_id );
 				}
 			}
-			printf( "Task %d shutdown\n", task_id );
+		//	printf( "Task %d shutdown\n", task_id );
 		}
 	}
 	if( task_id == 0 )
 	{
 		pim_write_black_and_white( filename.c_str( ), width, height,
 							   (const unsigned char**) pixels );
-		cout << end_time - start_time << endl;
+		printf( "%d,%d,%d,%.3f\r\n", num_tasks, width, rows, end_time - start_time );
 	}
 
 	delImage( pixels, width, height );
 	MPI_Finalize( );
-	printf( "Close Task: %d\n", task_id);
+//	printf( "Close Task: %d\n", task_id);
 
 	return 0;
 }
