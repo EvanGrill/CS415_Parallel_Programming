@@ -4,7 +4,6 @@
 #SBATCH --mem=16384MB
 #SBATCH --time=00:07:30
 #SBATCH --ntasks-per-core=1
-#SBATCH --ntasks-per-node=8
 #SBATCH --nodes=4
 #SBATCH --output=results.csv
 #SBATCH --error=/dev/null
