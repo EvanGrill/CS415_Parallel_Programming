@@ -3,8 +3,6 @@
 #SBATCH --ntasks=4
 #SBATCH --mem=16384MB
 #SBATCH --time=00:07:30
-#SBATCH --mail-user=grille@unr.edu
-#SBATCH --mail-type=NONE
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=8
 #SBATCH --nodes=1
