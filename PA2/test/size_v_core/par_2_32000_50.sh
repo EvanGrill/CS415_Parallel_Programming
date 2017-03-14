@@ -2,7 +2,7 @@
 
 #SBATCH --ntasks=2
 #SBATCH --mem=4GB
-#SBATCH --time=00:05:00
+#SBATCH --time=00:07:00
 #SBATCH --mincpus=2
 #SBATCH --nodes=1
 #SBATCH --output=results.csv
