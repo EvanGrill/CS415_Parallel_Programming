@@ -6,7 +6,7 @@ TARGET := ./build/main
 SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -Wall -std=c++11 -g
+CFLAGS := -std=c++11 -g
 LIB := -lmpi
 INC := -I include
 
