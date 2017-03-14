@@ -2,7 +2,7 @@
 
 #SBATCH --ntasks=4
 #SBATCH --mem=4GB
-#SBATCH --time=00:02:00
+#SBATCH --time=00:05:00
 #SBATCH --mincpus=4
 #SBATCH --nodes=1
 #SBATCH --output=results.csv
@@ -10,4 +10,4 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 
-srun --mpi=pmi2 ./build/main 1000 1000 255 50 parallel.pgm
+srun --mpi=pmi2 ./build/main 24000 24000 255 50 parallel.pgm

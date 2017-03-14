@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#SBATCH --ntasks=2
+#SBATCH --ntasks=24
 #SBATCH --mem=4GB
 #SBATCH --time=00:03:00
-#SBATCH --mincpus=2
-#SBATCH --nodes=1
+#SBATCH --mincpus=8
+#SBATCH --nodes=3
 #SBATCH --output=results.csv
 #SBATCH --error=/dev/null
 #SBATCH --open-mode=append

@@ -9,4 +9,4 @@
 #SBATCH --error=/dev/null
 #SBATCH --open-mode=append
 
-srun --mpi=pmi2 ./build/main 16000 16000 255 50 parallel.pgm
+srun --mpi=pmi2 ./build/main 16000 16000 255 100 parallel.pgm
