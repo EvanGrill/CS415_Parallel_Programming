@@ -23,7 +23,7 @@ $ srun -n [Tasks] ./build/main [rows] [cols] [iters] [filename]
 ```
 
 *You may wish to add arguments to `srun` to lock execution to
-specific amounts of nodes.
+specific amounts of nodes.*
 
 The output is formatted to `num_tasks,image_size,exec_time` for
 easy import into Microsoft Excel.  
