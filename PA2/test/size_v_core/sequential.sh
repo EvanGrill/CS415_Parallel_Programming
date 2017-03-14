@@ -8,6 +8,6 @@
 #SBATCH --error=/dev/null
 #SBATCH --exclusive
 
-srun --mpi=pmi2 ./build/main 25000 25000 1000 30 sequential.pgm
-srun --mpi=pmi2 ./build/main 50000 50000 1000 30 sequential.pgm
-srun --mpi=pmi2 ./build/main 75000 75000 1000 30 sequential.pgm
+srun --mpi=pmi2 ./build/main 25000 25000 255 sequential.pgm
+srun --mpi=pmi2 ./build/main 50000 50000 255 sequential.pgm
+srun --mpi=pmi2 ./build/main 75000 75000 255 sequential.pgm

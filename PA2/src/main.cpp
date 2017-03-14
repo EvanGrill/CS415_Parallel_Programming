@@ -129,7 +129,6 @@ bool isComplete( uint8_t list[], int size )
 
 int main( int argc, char** argv )
 {
-	int index;
 	double start_time, end_time;
 	int num_tasks, task_id, length;
 	char hostname[MPI_MAX_PROCESSOR_NAME];
@@ -150,12 +149,12 @@ int main( int argc, char** argv )
 	int height = atoi( argv[2] );
 	int iters = atoi( argv[3] );
 	// int rows = atoi( argv[4] );
-	int rows = height / (num_tasks - 1);
 	string filename = argv[4];
 	unsigned char** pixels = initImage( width, height );
 	
 	if( num_tasks < 2 )
 	{
+		int index;
 		start_time = MPI_Wtime( );
 
 		for( int i = 0; i < width; i++ )
@@ -163,7 +162,7 @@ int main( int argc, char** argv )
 			for( int j = 0; j < height; j++ )
 			{
 				index = calc_pixel( j, i, width, height, iters );
-				pixels[i][j] = 255 - (index * 10) % 255;
+				pixels[i][j] = (unsigned char) ( 255 - (index * 10) % 255 );
 			}
 		}
 
@@ -171,6 +170,7 @@ int main( int argc, char** argv )
 	}
 	else
 	{
+		int rows = height / (num_tasks - 1);
 		if( task_id == 0 )
 		{
 			int next;
