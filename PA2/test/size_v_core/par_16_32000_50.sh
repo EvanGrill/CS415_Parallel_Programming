@@ -10,4 +10,4 @@
 #SBATCH --open-mode=append
 #SBATCH --exclusive
 
-srun --mpi=pmi2 ./build/main 32000 32000 255 50 parallel.pgm
+srun --mpi=pmi2 ./build/main 32000 32000 255 parallel.pgm
