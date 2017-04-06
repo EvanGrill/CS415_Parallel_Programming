@@ -31,7 +31,7 @@ int main( int argc, char** argv )
 
 	if( argc < 2 || argc > 2 )
 	{
-		cout << "Usage: main [filename]" << endl;
+		cout << "Usage: main [data size]" << endl;
 		return 1;
 	}
 

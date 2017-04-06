@@ -6,32 +6,24 @@ To build this project, type `make`.
 $ make
 ```
 
-This will build the program in the root directory.
-
-You can also build the generator by adding the generator qualifier.
-
-```
-$ make generator
-```
-
-This will build the generator in the `test` directory.
+This will build the program in the build directory.
 
 ## Running
-First, generate test files by issuing the following command:
+You can run the program in the following manner.
 
 ```
-$ ./test/generator > ./test/[filename]
+$ srun ./build/main [data size]
 ```
 
-You'll then get a blank input prompt.  Type in the size of the
-test file you'd like in number of integers.
-
-Now that you've generated 1 or more test files, the `seq_test.sh`
-script will run the program on all of your `.txt` files in your
-`test` folder.
+Where `[data size]` is the number of integers to randomly
+generate for testing the program.  Additionally, a variety
+of scripts for SBATCHing have been provided in the `test`
+directory.  They can be run individually or all of them
+can be queue at once (1 per minute) by issuing the following
+command.
 
 ```
-$ ./seq_test.sh
+$ ./test.sh
 ```
 
 Output will be in the form of `results.csv`.
