@@ -1,21 +1,12 @@
 #!/bin/bash
 
-BATCHFILES="./test/*.sh"
+#!/bin/bash
 
-rm -rf results.csv
-echo "num_tasks,data_size,exec_time" > results.csv
-
-for batchfile in $BATCHFILES
+rm -f ./results.csv
+echo "num_tasks,data_size,exec_time" > ./results.csv
+for file in ./test/*.sh
 do
-
-    TEST=$(squeue -o"%.18i %.9P %.20j %.20u %.8T %.10M %.9l %.6D %R")
-
-    while [[ "$TEST" =~ "grille-" ]]
-    do
-        sleep 1s
-        TEST=$(squeue -o"%.18i %.9P %.20j %.20u %.8T %.10M %.9l %.6D %R")
-    done
-    echo "Batching $batchfile"
-    sbatch $batchfile
-    sleep 1s
+    echo "Starting ${file}"
+    sbatch ${file}
+    sleep 1m
 done
