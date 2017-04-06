@@ -17,9 +17,10 @@ using namespace std;
 vector<int> readFile( string filename );
 vector<int> bucketSort( vector<int> input );
 void printList( vector<int> input );
-void sequential( string filename );
-void master_node( string filename, int num_tasks );
-void slave_node( string filename, int task_id, int num_tasks );
+void sequential( uint64_t size );
+void master_node( uint64_t size, int num_tasks );
+void slave_node( uint64_t size, int task_id, int num_tasks );
+int* generateRandoms( uint64_t amount, int maximum );
 
 int main( int argc, char** argv )
 {
@@ -34,21 +35,21 @@ int main( int argc, char** argv )
 		return 1;
 	}
 
-	string filename = argv[1];
+	uint64_t size = strtoull(argv[1], NULL, 0);
 
 	if ( num_tasks == 1 )
 	{
-		sequential( filename );
+		sequential( size );
 	}
 	else
 	{
 		if( task_id == 0 )
 		{
-			master_node( filename, num_tasks );
+			master_node( size, num_tasks );
 		}
 		else
 		{
-			slave_node( filename, task_id, num_tasks );
+			slave_node( size, task_id, num_tasks );
 		}
 	}
 
@@ -76,31 +77,25 @@ vector<int> readFile( string filename )
 	return list;
 }
 
-vector<int> bucketSort( vector<int> input )
+void bucketSort( int* list, uint64_t size )
 {
-	uint64_t count = input.size( );
 	int bucket;
 	array<vector<int>, NUM_BUCKETS> buckets;
 	vector<int> output;
-	int max_number = *max_element( input.begin( ), input.end( ) );
-	int bucket_size = max_number / NUM_BUCKETS+1;
+	int bucket_size = MAX_NUMBER / NUM_BUCKETS;
 
-	for( int i = 0; i < count; i++ )
+	for( int i = 0; i < size; i++ )
 	{
-		bucket = input[i] / bucket_size;
-		buckets[bucket].push_back( input[i] );	
+		bucket = list[i] / bucket_size;
+		buckets[bucket].push_back( list[i] );	
 	}
 
 	for( int i = 0; i < NUM_BUCKETS; i++ )
 	{
 		sort( buckets[i].begin(), buckets[i].end() );
-		for( int j = 0; j < buckets[i].size( ); j++ )
-		{
-			output.push_back( buckets[i][j] );
-		}
 	}
 
-	return output;
+	return;
 }
 
 void printList( vector<int> input )
@@ -111,65 +106,50 @@ void printList( vector<int> input )
 	}
 }
 
-void sequential( string filename )
+void sequential( uint64_t size )
 {
-	vector<int> list = readFile( filename );
-	if( list.size( ) == 0 )
-	{
-		cout << "File Open Error" << endl;
-		return;
-	}
+	int* list = generateRandoms( size, MAX_NUMBER );
 
 	double start_time = MPI_Wtime( );
-	list = bucketSort( list );
+	bucketSort( list, size );
 	double end_time = MPI_Wtime( );
 
-	cout << list.size( ) << "," << end_time - start_time << endl;
-	MPI_Finalize();
+	cout << "1," << size << "," << end_time - start_time << endl;
+	delete[] list;
 	return;
 }
 
-void master_node( string filename, int num_tasks )
+void master_node( uint64_t size, int num_tasks )
 {
-	vector<int> masterList = readFile( filename );
-	uint64_t size = masterList.size( );
-	if( size == 0 )
-	{
-		cout << "File Open Error" << endl;
-		MPI_Abort( MPI_COMM_WORLD, 2 );
-	}
-	
-	int max_size = *max_element( masterList.begin( ), masterList.end( ) );
-	int bucket_width = max_size / num_tasks + 1;
+	int* buffer;
+	int bucket_width = MAX_NUMBER / num_tasks + 1;
 	int big_segment = size / (num_tasks);
-//	int small_segment = size - big_segment * ( num_tasks - 1 );
-	vector<int> buffer;
 
 	for( int i = 1; i < num_tasks; i++ )
 	{
-		for( int j = 0; j < big_segment; j++ )
-		{
-			buffer.push_back( masterList[(i - 1) * big_segment + j] );
-		}
-		MPI_Send( &buffer[0], buffer.size( ), MPI_INT, i, INITIAL, MPI_COMM_WORLD );
-		MPI_Send( &max_size, 1, MPI_INT, i, INITIAL, MPI_COMM_WORLD );
-		buffer.clear( );
+		buffer = generateRandoms( big_segment, MAX_NUMBER );
+		MPI_Send( &buffer[0], big_segment, MPI_INT, i, INITIAL, MPI_COMM_WORLD );
+		delete[] buffer;
 	}
+
+	buffer = generateRandoms( size - big_segment * ( num_tasks - 1 ), MAX_NUMBER );
+
 	vector<vector<int>> buckets;
 	for( int i = 0; i < num_tasks; i++ )
 	{
 		vector<int> temp;
 		buckets.push_back( temp );
 	}
-
+	
 	double start_time = MPI_Wtime( );
 
-	for(int i = ( num_tasks - 1 ) * big_segment; i < size; i++ )
+	for(int i = 0; i < size - big_segment * ( num_tasks - 1 ); i++ )
 	{	
-		buckets[ masterList[i] / (bucket_width) ].push_back( masterList[i] );
+		buckets[ buffer[i] / bucket_width ].push_back( buffer[i] );
 	}
 	MPI_Request requests[num_tasks];
-	
+
+	delete[] buffer;
 	for( int i = 1; i < num_tasks; i++ )
 	{
 		MPI_Isend( &buckets[i][0], buckets[i].size( ), MPI_INT, i, REDISTRIBUTE, MPI_COMM_WORLD, &requests[i] );
@@ -181,12 +161,13 @@ void master_node( string filename, int num_tasks )
 	{
 		MPI_Probe( i, REDISTRIBUTE, MPI_COMM_WORLD, &recv_status );
 		MPI_Get_count( &recv_status, MPI_INT, &recv_count );
-		int* buffer2 = new int[recv_count];
-		MPI_Recv( buffer2, recv_count, MPI_INT, i, REDISTRIBUTE, MPI_COMM_WORLD, &recv_status );
+		buffer = new int[recv_count];
+		MPI_Recv( buffer, recv_count, MPI_INT, i, REDISTRIBUTE, MPI_COMM_WORLD, &recv_status );
 		for(int j = 0; j < recv_count; j++ )
 		{
-			buckets[0].push_back( buffer2[j] );
+			buckets[0].push_back( buffer[j] );
 		}
+		delete[] buffer;
 	}
 	
 	for( int i = 1; i < num_tasks; i++ )
@@ -204,17 +185,16 @@ void master_node( string filename, int num_tasks )
 	cout << num_tasks << "," << size << "," << end_time - start_time << "\r\n";
 }
 
-void slave_node( string filename, int task_id, int num_tasks )
+void slave_node( uint64_t size, int task_id, int num_tasks )
 {
 	MPI_Status recv_status;
-	int recv_count, max_value;
+	int recv_count;
 	MPI_Probe( 0, INITIAL, MPI_COMM_WORLD, &recv_status );
 	MPI_Get_count( &recv_status, MPI_INT, &recv_count );
 	int *buffer = new int[recv_count];
 	int buffer_size = recv_count;
 	MPI_Recv( buffer, recv_count, MPI_INT, 0, INITIAL, MPI_COMM_WORLD, &recv_status );
-	MPI_Recv( &max_value, 1, MPI_INT, 0, INITIAL, MPI_COMM_WORLD, &recv_status );
-	int bucket_width = max_value / num_tasks + 1;
+	int bucket_width = MAX_NUMBER / num_tasks + 1;
 
 	vector<vector<int>> buckets;
 	for( int i = 0; i < num_tasks; i++ )
@@ -247,9 +227,10 @@ void slave_node( string filename, int task_id, int num_tasks )
 			{
 				buckets[task_id].push_back( buffer2[j] );
 			}
+			delete[] buffer2;
 		}
 	}
-	
+	delete[] buffer;
 	for( int i = 0; i < num_tasks; i++ )
 	{
 		if( i != task_id )
@@ -260,4 +241,15 @@ void slave_node( string filename, int task_id, int num_tasks )
 	sort( buckets[task_id].begin( ), buckets[task_id].end( ) );
 
 	MPI_Send( &recv_count, 1, MPI_INT, 0, COLLECT, MPI_COMM_WORLD );
+}
+
+int* generateRandoms( uint64_t amount, int maximum )
+{
+	uint64_t i;
+	int* list = new int[amount];
+	for(i=0;i<amount;i++){
+		list[i] = random() % maximum;
+	}
+
+	return list;
 }

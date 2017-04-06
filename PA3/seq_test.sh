@@ -1,8 +1,8 @@
 #!/bin/bash
 
 rm -f ./results.csv
-echo "num_nums,exec_time" >> ./results.csv
-for file in ./test/*.txt
+echo "num_tasks,data_size,exec_time" >> ./results.csv
+for file in ./test/*.sh
 do
-    mpirun -n 8 ./build/main ${file} >> ./results.csv
+    sbatch ${file}
 done
