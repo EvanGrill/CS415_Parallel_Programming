@@ -1,8 +1,6 @@
 #!/bin/bash
 
 #SBATCH --ntasks=1
-#SBATCH --mem=16GB
-#SBATCH --mincpus=1
 #SBATCH --nodes=1
 #SBATCH --output=results.csv
 #SBATCH --error=/dev/null

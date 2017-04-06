@@ -1,7 +1,9 @@
 #!/bin/bash
 
-BATCHFILES="test"
+BATCHFILES="./test/"
 
+rm -rf results.csv
+echo "num_tasks,data_size,exec_time" > results.csv
 
 for batchfile in $BATCHFILES
 do
