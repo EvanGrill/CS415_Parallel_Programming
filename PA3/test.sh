@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BATCHFILES="test/"
+BATCHFILES="test"
 
 
 for batchfile in $BATCHFILES
