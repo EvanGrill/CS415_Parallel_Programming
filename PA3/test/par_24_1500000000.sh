@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #SBATCH --ntasks=24
-#SBATCH --nodes=3
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=8
 #SBATCH --output=results.csv
 #SBATCH --error=/dev/null
 #SBATCH --open-mode=append
