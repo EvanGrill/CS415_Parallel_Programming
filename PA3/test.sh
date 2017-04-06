@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BATCHFILES="./test/"
+BATCHFILES="./test/*.sh"
 
 rm -rf results.csv
 echo "num_tasks,data_size,exec_time" > results.csv
