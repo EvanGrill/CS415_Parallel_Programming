@@ -17,9 +17,5 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -c -o $@ $< $(INC)
 
-generator:
-	@mkdir -p $(BUILDDIR)
-	$(CC) $(CFLAGS) -o $(BUILDDIR)/generator ./test/generator.cpp
-
 clean:
 	$(RM) -r $(BUILDDIR) $(TARGET) *.csv slurm-* ./build
