@@ -1,3 +1,13 @@
+/**
+ *
+ * PA4: Parallel Matrix Multiplication
+ * Name: [REDACTED]
+ * Date: 04/20/2017
+ * Description:
+ * Performs Cannon's Algorithm to do matrix
+ * multiplcation.
+ *
+ **/
 #include <iostream>
 #include <cstdlib>
 #include <mpi.h>
@@ -5,9 +15,11 @@
 using namespace std;
 
 int** allocateSquareMatrix( int size );
-int** matrixMultiplySeq( int** A, int** B, int size );
+void deallocateSquareMatrix( int** matrix );
+void matrixMultiplySeq( int** A, int** B, int** C, int size );
 int** subMatrix( int** matrix, int x, int y, int subSize );
 void fillMatrix( int** matrix, int dimensions );
+void fillMatrix( int** matrix, int** from, int x, int y, int dimensions );
 void zeroMatrix( int** matrix, int dimensions );
 void printMatrix( int** matrix, int dimensions );
 int** addMatrices( int** A, int** B, int dimensions );
@@ -16,6 +28,7 @@ int** addMatrices( int** A, int** B, int dimensions );
 #define DIST_B 2
 #define SHIFT_A 3
 #define SHIFT_B 4
+#define COLLECT 5
 
 int main( int argc, char** argv )
 {
@@ -47,12 +60,14 @@ int main( int argc, char** argv )
 		// Initialize Matrices
 		int** A = allocateSquareMatrix( size );
 		int** B = allocateSquareMatrix( size );
+		int** C = allocateSquareMatrix( size );
 		fillMatrix( A, size );
 		fillMatrix( B, size );
+		zeroMatrix( C, size );
 
 		// Preform multiplicaton
 		start_time = MPI_Wtime( );
-		int ** result = matrixMultiplySeq( A, B, size );
+	 	matrixMultiplySeq( A, B, C, size );
 		end_time = MPI_Wtime( );
 		
 		// printMatrix( result, size );
@@ -146,19 +161,21 @@ int main( int argc, char** argv )
 					{
 						int** buffA = subMatrix( masterA, i * sub_dim, j * sub_dim, sub_dim );
 						int** buffB = subMatrix( masterB, i * sub_dim, j * sub_dim, sub_dim );
-						MPI_Isend( &buffA[0][0], sub_size, MPI_INT, recv_rank, DIST_A, MPI_COMM_WORLD, &requestsA[recv_rank] );
-						MPI_Isend( &buffB[0][0], sub_size, MPI_INT, recv_rank, DIST_B, MPI_COMM_WORLD, &requestsB[recv_rank] );
+						MPI_Send( &buffA[0][0], sub_size, MPI_INT, recv_rank, DIST_A, MPI_COMM_WORLD );
+						MPI_Send( &buffB[0][0], sub_size, MPI_INT, recv_rank, DIST_B, MPI_COMM_WORLD );
+						deallocateSquareMatrix( buffA );
+						deallocateSquareMatrix( buffB );
 					}
 				}
 			}
 			// Wait for all of the receives to complete
 			// on the slaves.
-			for( int i = 1; i < num_tasks; i++ )
-			{
-				MPI_Status wait_status;
-				MPI_Wait( &requestsA[i], &wait_status );
-				MPI_Wait( &requestsB[i], &wait_status );
-			}
+		//	for( int i = 1; i < num_tasks; i++ )
+		//	{
+		//		MPI_Status wait_status;
+		//		MPI_Wait( &requestsA[i], &wait_status );
+		//		MPI_Wait( &requestsB[i], &wait_status );
+		//	}
 			
 			// Wait until all tasks are here.
 			MPI_Barrier( MPI_COMM_WORLD );
@@ -176,56 +193,27 @@ int main( int argc, char** argv )
 		}
 
 		// Start the timer
-		start_time = MPI_Wtime( );
+		if( task_id == 0 )
+		{
+			start_time = MPI_Wtime( );
+		}
 
 		// Initialize Matrix
 		int send_rank, recv_rank;
 		int send_coords[2], recv_coords[2];
 		MPI_Status recv_status;
-		// Shift A Left
-		if( myCoords[0] != 0 )
-		{
-			// Calculate coordinates of task to send to
-			// and task to receive from.
-			send_coords[0] = myCoords[0];
-			send_coords[1] = myCoords[1] - myCoords[0];
-			recv_coords[0] = myCoords[0];
-			recv_coords[1] = myCoords[1] + myCoords[0]; 
 
-			// Obtain rank of task to send to and
-			// task to receive from.
-			MPI_Cart_rank( GRID_COMM, send_coords, &send_rank );
-			MPI_Cart_rank( GRID_COMM, recv_coords, &recv_rank );
-			
-			// Send to the send rank, and then receive
-			// and replace my old A.
-			MPI_Sendrecv_replace( &A[0][0], sub_size, MPI_INT,
-								  send_rank, SHIFT_A,
-								  recv_rank, SHIFT_A,
-								  MPI_COMM_WORLD, &recv_status);
-		}
-		// Shift B Up.
-		if( myCoords[1] != 0 )
-		{
-			// Calculate coordinates of task to send to
-			// and task to receive from
-			send_coords[1] = myCoords[1];
-			send_coords[0] = myCoords[0] - myCoords[1];
-			recv_coords[1] = myCoords[1];
-			recv_coords[0] = myCoords[0] + myCoords[1]; 
-
-			// Obtain rank of task to send to and
-			// task to receive from.
-			MPI_Cart_rank( GRID_COMM, send_coords, &send_rank );
-			MPI_Cart_rank( GRID_COMM, recv_coords, &recv_rank );
-			
-			// Send to the send rank, and then receive
-			// and replace my old B.
-			MPI_Sendrecv_replace( &B[0][0], sub_size, MPI_INT,
-								  send_rank, SHIFT_B,
-								  recv_rank, SHIFT_B,
-								  MPI_COMM_WORLD, &recv_status);
-		}
+		// Obtain send and recv ranks for shifting A and B.
+		int Send_A, Recv_A, Send_B, Recv_B;
+		MPI_Cart_shift( GRID_COMM, 1, myCoords[0], &Recv_A, &Send_A );
+		MPI_Cart_shift( GRID_COMM, 0, myCoords[1], &Recv_B, &Send_B );
+		
+		// Send and Recv A & B and replace the existing
+		// A & B.
+		MPI_Sendrecv_replace( &B[0][0], sub_size, MPI_INT,
+								  Send_B, SHIFT_B,
+								  Recv_B, SHIFT_B,
+								  GRID_COMM, &recv_status);
 
 		// Wait until all tasks are here.
 		MPI_Barrier( MPI_COMM_WORLD );
@@ -234,55 +222,34 @@ int main( int argc, char** argv )
 		for( int i = 0; i < grid_size; i++ )
 		{
 			// Multiply and Accumulate
-			int** temp = matrixMultiplySeq( A, B, sub_dim );
-			C = addMatrices( C, temp, sub_dim );
+			matrixMultiplySeq( A, B, C, sub_dim );
 			
-			// shift A
-			// Calculate coordinates of task to send to
-			// and task to receive from
-			send_coords[0] = myCoords[0];
-			send_coords[1] = myCoords[1] - 1;
-			recv_coords[0] = myCoords[0];
-			recv_coords[1] = myCoords[1] + 1;
+			// shift A & B
+			// Calculate Send & Recv Ranks to shift to for
+			// each, A and B.
+			MPI_Cart_shift( GRID_COMM, 1, 1, &Recv_A, &Send_A );
+			MPI_Cart_shift( GRID_COMM, 0, 1, &Recv_B, &Send_B );
 			
-			// Obtain rank of task to send to and
-			// task to receive from.
-			MPI_Cart_rank( GRID_COMM, send_coords, &send_rank );
-			MPI_Cart_rank( GRID_COMM, recv_coords, &recv_rank );
-			
-			// Send to the send rank, and then receive
-			// and replace my old A.
+			// Send and Recv A & B and replace the existing
+			// A & B.
 			MPI_Sendrecv_replace( &A[0][0], sub_size, MPI_INT,
-								  send_rank, SHIFT_A,
-								  recv_rank, SHIFT_A,
-								  MPI_COMM_WORLD, &recv_status);
-			
-			// shift B
-			// Calculate coordinates of task to send to
-			// and task to receive from
-			send_coords[1] = myCoords[1];
-			send_coords[0] = myCoords[0] - 1;
-			recv_coords[1] = myCoords[1];
-			recv_coords[0] = myCoords[0] + 1; 
-
-			// Obtain rank of task to send to and
-			// task to receive from.
-			MPI_Cart_rank( GRID_COMM, send_coords, &send_rank );
-			MPI_Cart_rank( GRID_COMM, recv_coords, &recv_rank );
-			
-			// Send to the send rank, and then receive
-			// and replace my old B.
+								  Send_A, SHIFT_A,
+								  Recv_A, SHIFT_A,
+								  GRID_COMM, &recv_status);
 			MPI_Sendrecv_replace( &B[0][0], sub_size, MPI_INT,
-								  send_rank, SHIFT_B,
-								  recv_rank, SHIFT_B,
+								  Send_B, SHIFT_B,
+								  Recv_B, SHIFT_B,
 								  MPI_COMM_WORLD, &recv_status);
 			
 			// Wait until all tasks are here.
 			MPI_Barrier( MPI_COMM_WORLD );
 		}
 		
-		// stop timer
-		end_time = MPI_Wtime( );
+		if( task_id == 0 )
+		{
+			end_time = MPI_Wtime( );
+		}
+		
 	}
 
 	// Print results
@@ -312,11 +279,15 @@ int** allocateSquareMatrix( int size )
     return array;
 }
 
+void deallocateSquareMatrix( int** matrix )
+{
+	delete[] matrix;
+}
+
 // Sequential matrix multiplication.
-int** matrixMultiplySeq( int** A, int** B, int size )
+void matrixMultiplySeq( int** A, int** B, int** C, int size )
 {
 	int i, j, k, sum;
-	int** result = allocateSquareMatrix( size );
 
 	for( i = 0; i < size; i++ )
 	{
@@ -327,11 +298,10 @@ int** matrixMultiplySeq( int** A, int** B, int size )
 			{
 				sum = sum + A[j][k] * B[k][i];
 			}
-			result[i][j] = sum;
+			C[i][j] += sum;
 		}
 	}
 
-	return result;
 }
 
 // Returns a subSize x subSize matrix that is a
@@ -361,6 +331,19 @@ void fillMatrix( int** matrix, int dimensions )
 		for( int j = 0; j < dimensions; j++ )
 		{
 			matrix[i][j] = i + j + 1;
+		}
+	}
+}
+
+// fills matrix with sub_matrix data
+void fillMatrix( int** matrix, int** from, int x, int y, int dimensions )
+{
+	int i, j;
+	for( i = 0; i < dimensions; i++ )
+	{
+		for( j = 0; j < dimensions; j++ )
+		{
+			matrix[y+i][x+j] = from[i][j];
 		}
 	}
 }
