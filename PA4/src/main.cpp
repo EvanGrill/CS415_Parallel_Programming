@@ -70,7 +70,7 @@ int main( int argc, char** argv )
 	 	matrixMultiplySeq( A, B, C, size );
 		end_time = MPI_Wtime( );
 		
-		// printMatrix( result, size );
+//		printMatrix( C, size );
 	}
 	// Otherwise, run parallel
 	else
@@ -249,7 +249,7 @@ int main( int argc, char** argv )
 		{
 			end_time = MPI_Wtime( );
 		}
-		
+
 	}
 
 	// Print results
@@ -330,7 +330,7 @@ void fillMatrix( int** matrix, int dimensions )
 	{
 		for( int j = 0; j < dimensions; j++ )
 		{
-			matrix[i][j] = i + j + 1;
+			matrix[i][j] = ( i + j + 1 ) % 10 ;
 		}
 	}
 }
