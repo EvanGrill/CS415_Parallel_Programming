@@ -1,6 +1,6 @@
 #!/bin/bash
 rm -rf output.csv
-echo "num_tasks,matrix_dim,exec_time" >>> output.csv
+echo "num_tasks,matrix_dim,exec_time" >> output.csv
 srun -n 1 --mpi=pmi2 ./build/main 120 >> output.csv
 srun -n 1 --mpi=pmi2 ./build/main 240 >> output.csv
 srun -n 1 --mpi=pmi2 ./build/main 360 >> output.csv
