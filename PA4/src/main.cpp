@@ -9,6 +9,8 @@
  *
  **/
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <cstdlib>
 #include <mpi.h>
 #include <cmath>
@@ -22,7 +24,9 @@ void fillMatrix( int** matrix, int dimensions );
 void fillMatrix( int** matrix, int** from, int x, int y, int dimensions );
 void zeroMatrix( int** matrix, int dimensions );
 void printMatrix( int** matrix, int dimensions );
+void printMatrix( string filename, int** matrix, int dimensions );
 int** addMatrices( int** A, int** B, int dimensions );
+void readInput( string filename, int** &matrix, int &size );
 
 #define DIST_A 1
 #define DIST_B 2
@@ -35,34 +39,51 @@ int main( int argc, char** argv )
 	// declare variables and initialize MPI
 	int num_tasks, task_id, size;
 	double start_time, end_time;
+	string in1, in2, out;
 	MPI_Init( &argc, &argv );
 	MPI_Comm_size( MPI_COMM_WORLD, &num_tasks );
 	MPI_Comm_rank( MPI_COMM_WORLD, &task_id );
 
 	// Verify that program has correct number of
 	// arguments.
-	if( argc < 2 || argc > 2 )
+	if( argc != 2 && argc != 4 )
 	{
 		if( task_id == 0 )
 		{
 			cout << "Usage: main [size]" << endl;
+			cout << "or" << endl;
+			cout << "Usage: main [input file] [input file] [output file]" << endl;
 		}
 		MPI_Finalize( );
 		return 1;
 	}
-
-	// Process arguments
-	size = atoi(argv[1]);
+	else if( argc == 4 )
+	{
+		in1 = argv[1];
+		in2 = argv[2];
+		out = argv[3];
+	}
 
 	// If only one task, run sequential
 	if( num_tasks == 1 )
 	{
+		int** A;
+		int** B;
 		// Initialize Matrices
-		int** A = allocateSquareMatrix( size );
-		int** B = allocateSquareMatrix( size );
+		if( argc == 2 )
+		{
+			size = atoi( argv[1] );
+			A = allocateSquareMatrix( size );
+			B = allocateSquareMatrix( size );
+			fillMatrix( A, size );
+			fillMatrix( B, size );
+		}
+		else
+		{
+			readInput( in1, A, size );
+			readInput( in2, B, size );
+		}
 		int** C = allocateSquareMatrix( size );
-		fillMatrix( A, size );
-		fillMatrix( B, size );
 		zeroMatrix( C, size );
 
 		// Preform multiplicaton
@@ -70,7 +91,14 @@ int main( int argc, char** argv )
 	 	matrixMultiplySeq( A, B, C, size );
 		end_time = MPI_Wtime( );
 		
-//		printMatrix( C, size );
+		if( argc == 2 )
+		{
+			//printMatrix( C, size );
+		}
+		else
+		{
+			printMatrix( out, C, size );
+		}
 	}
 	// Otherwise, run parallel
 	else
@@ -81,6 +109,9 @@ int main( int argc, char** argv )
 		int** A;
 		int** B;
 		int** C;
+		int** masterA;
+		int** masterB;
+
 		// Verify square number of processors.
 		if( ( (int) sqrt( num_tasks ) ) != sqrt( num_tasks ) )
 		{
@@ -91,6 +122,25 @@ int main( int argc, char** argv )
 			}
 			MPI_Finalize( );
 			return 1; 
+		}
+		
+		if( argc == 2 )
+		{
+			size = atoi( argv[1] );
+		}
+		else
+		{
+			if( task_id == 0 )
+			{
+				readInput( in1, masterA, size );
+				readInput( in2, masterB, size );
+			}
+			else
+			{
+				ifstream temp( in1 );
+				temp >> size;
+				temp.close( );
+			}
 		}
 		grid_size = (int) sqrt( num_tasks );
 		// Verify rows are appropriate.
@@ -133,10 +183,13 @@ int main( int argc, char** argv )
 		if( task_id == 0 )
 		{
 			// Allocate and fill Matrices
-			int** masterA = allocateSquareMatrix( size );
-			int** masterB = allocateSquareMatrix( size );
-			fillMatrix( masterA, size );
-			fillMatrix( masterB, size );
+			if( argc == 2 )
+			{
+				masterA = allocateSquareMatrix( size );
+				masterB = allocateSquareMatrix( size );
+				fillMatrix( masterA, size );
+				fillMatrix( masterB, size );
+			}
 
 			// Obtain master's submatrix
 			A = subMatrix( masterA, myCoords[0] * sub_dim, myCoords[1] * sub_dim, sub_dim );
@@ -205,15 +258,20 @@ int main( int argc, char** argv )
 
 		// Obtain send and recv ranks for shifting A and B.
 		int Send_A, Recv_A, Send_B, Recv_B;
-		MPI_Cart_shift( GRID_COMM, 1, myCoords[0], &Recv_A, &Send_A );
-		MPI_Cart_shift( GRID_COMM, 0, myCoords[1], &Recv_B, &Send_B );
+		MPI_Cart_shift( GRID_COMM, 1, -1 * myCoords[0], &Recv_A, &Send_A );
+		MPI_Cart_shift( GRID_COMM, 0, -1 * myCoords[1], &Recv_B, &Send_B );
+		
 		
 		// Send and Recv A & B and replace the existing
 		// A & B.
+		MPI_Sendrecv_replace( &A[0][0], sub_size, MPI_INT,
+								  Send_A, SHIFT_A,
+								  Recv_A, SHIFT_A,
+								  MPI_COMM_WORLD, &recv_status);
 		MPI_Sendrecv_replace( &B[0][0], sub_size, MPI_INT,
 								  Send_B, SHIFT_B,
 								  Recv_B, SHIFT_B,
-								  GRID_COMM, &recv_status);
+								  MPI_COMM_WORLD, &recv_status);
 
 		// Wait until all tasks are here.
 		MPI_Barrier( MPI_COMM_WORLD );
@@ -227,15 +285,15 @@ int main( int argc, char** argv )
 			// shift A & B
 			// Calculate Send & Recv Ranks to shift to for
 			// each, A and B.
-			MPI_Cart_shift( GRID_COMM, 1, 1, &Recv_A, &Send_A );
-			MPI_Cart_shift( GRID_COMM, 0, 1, &Recv_B, &Send_B );
-			
+			MPI_Cart_shift( GRID_COMM, 1, -1, &Recv_A, &Send_A );
+			MPI_Cart_shift( GRID_COMM, 0, -1, &Recv_B, &Send_B );
+
 			// Send and Recv A & B and replace the existing
 			// A & B.
 			MPI_Sendrecv_replace( &A[0][0], sub_size, MPI_INT,
 								  Send_A, SHIFT_A,
 								  Recv_A, SHIFT_A,
-								  GRID_COMM, &recv_status);
+								  MPI_COMM_WORLD, &recv_status);
 			MPI_Sendrecv_replace( &B[0][0], sub_size, MPI_INT,
 								  Send_B, SHIFT_B,
 								  Recv_B, SHIFT_B,
@@ -248,6 +306,33 @@ int main( int argc, char** argv )
 		if( task_id == 0 )
 		{
 			end_time = MPI_Wtime( );
+		}
+
+		if( task_id == 0 )
+		{
+			int** result = allocateSquareMatrix( size );
+			fillMatrix( result, C, 0, 0, sub_dim );
+			for( int i = 1; i < num_tasks; i++ )
+			{
+				int coords[2];
+				MPI_Status recv_status;
+				MPI_Cart_coords( GRID_COMM, i, 2, coords );
+				MPI_Recv( &C[0][0], sub_size, MPI_INT, i, COLLECT, MPI_COMM_WORLD, &recv_status );
+				fillMatrix( result, C, coords[0] * sub_dim, coords[1] * sub_dim, sub_dim );
+			}
+			if( argc == 2 )
+			{
+				//printMatrix( result, size );
+			}
+			else
+			{
+				printMatrix( out, result, size );
+			}
+			
+		}
+		else
+		{
+			MPI_Send( &C[0][0], sub_size, MPI_INT, 0, COLLECT, MPI_COMM_WORLD );
 		}
 
 	}
@@ -296,7 +381,7 @@ void matrixMultiplySeq( int** A, int** B, int** C, int size )
 			sum = 0;
 			for( k = 0; k < size; k++ )
 			{
-				sum = sum + A[j][k] * B[k][i];
+				sum = sum + A[i][k] * B[k][j];
 			}
 			C[i][j] += sum;
 		}
@@ -316,7 +401,7 @@ int** subMatrix( int** matrix, int x, int y, int subSize )
 	{
 		for( int j = 0; j < subSize; j++ )
 		{
-			result[i][j] = matrix[y+i][x+j];
+			result[i][j] = matrix[x+i][y+j];
 		}
 	}
 	return result;
@@ -343,7 +428,7 @@ void fillMatrix( int** matrix, int** from, int x, int y, int dimensions )
 	{
 		for( j = 0; j < dimensions; j++ )
 		{
-			matrix[y+i][x+j] = from[i][j];
+			matrix[x+i][y+j] = from[i][j];
 		}
 	}
 }
@@ -374,6 +459,20 @@ void printMatrix( int** matrix, int dimensions )
 	}
 }
 
+void printMatrix( string filename, int** matrix, int dimensions )
+{
+	ofstream output( filename );
+	output << dimensions;
+	for( int i = 0; i < dimensions; i++ )
+	{
+		output << endl; 
+		for( int j = 0; j < dimensions; j++ )
+		{
+			output << matrix[i][j] << " ";
+		}
+	}
+}
+
 // Adds two matrices and returns the result.
 int** addMatrices( int** A, int** B, int dimensions )
 {
@@ -386,4 +485,19 @@ int** addMatrices( int** A, int** B, int dimensions )
 		}
 	}
 	return result;
+}
+
+void readInput( string filename, int** &matrix, int &size )
+{
+	ifstream input( filename );
+	input >> size;
+	matrix = allocateSquareMatrix( size );
+	for( int i = 0; i < size; i++ )
+	{
+		for( int j = 0; j < size; j++ )
+		{
+			input >> matrix[i][j];
+		}
+	}
+	input.close( );
 }
