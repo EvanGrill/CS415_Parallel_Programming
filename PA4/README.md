@@ -1,4 +1,10 @@
 # PA4: Matrix Multiplication
+## About
+This project implements Cannon's algorithm for
+parallel matrix multiplication.  It times the
+actual matrix multiplication not the transfer to
+and from the parallel processors.
+
 ## Building
 To build this project, type `make`.
 
