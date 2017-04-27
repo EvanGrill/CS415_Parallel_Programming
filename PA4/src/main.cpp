@@ -57,6 +57,7 @@ int main( int argc, char** argv )
 		MPI_Finalize( );
 		return 1;
 	}
+	// if the arguments are for file i/o save the filenames.
 	else if( argc == 4 )
 	{
 		in1 = argv[1];
@@ -70,6 +71,8 @@ int main( int argc, char** argv )
 		int** A;
 		int** B;
 		// Initialize Matrices
+		// If argument set for size, create two arrays
+		// and fill them.
 		if( argc == 2 )
 		{
 			size = atoi( argv[1] );
@@ -78,23 +81,29 @@ int main( int argc, char** argv )
 			fillMatrix( A, size );
 			fillMatrix( B, size );
 		}
+		// otherwise, read in the matricies from files.
 		else
 		{
 			readInput( in1, A, size );
 			readInput( in2, B, size );
 		}
+		//allocate result matrix and zero out.
 		int** C = allocateSquareMatrix( size );
 		zeroMatrix( C, size );
 
-		// Preform multiplicaton
+		// Start timer
 		start_time = MPI_Wtime( );
+		// Perform multiplcation
 	 	matrixMultiplySeq( A, B, C, size );
+		// Stop timer
 		end_time = MPI_Wtime( );
 		
+		// if size only, output result (if not commented).
 		if( argc == 2 )
 		{
 			//printMatrix( C, size );
 		}
+		// if file i/o, output result to output file.
 		else
 		{
 			printMatrix( out, C, size );
@@ -103,6 +112,7 @@ int main( int argc, char** argv )
 	// Otherwise, run parallel
 	else
 	{
+		// declare variables
 		int grid_size, sub_dim, sub_size;
 		int reorder, ierr, dim_size[2], periods[2];
 
@@ -124,17 +134,27 @@ int main( int argc, char** argv )
 			return 1; 
 		}
 		
+		// if size input mode, store size and allocate
+		// and fill matrices.
 		if( argc == 2 )
 		{
 			size = atoi( argv[1] );
+			masterA = allocateSquareMatrix( size );
+			masterB = allocateSquareMatrix( size );
+			fillMatrix( masterA, size );
+			fillMatrix( masterB, size );
 		}
+		// otherwise read in from file.
 		else
 		{
+			// if main task, read in files.
 			if( task_id == 0 )
 			{
 				readInput( in1, masterA, size );
 				readInput( in2, masterB, size );
 			}
+			// if not main task open the file and read
+			// the size in.
 			else
 			{
 				ifstream temp( in1 );
@@ -142,8 +162,10 @@ int main( int argc, char** argv )
 				temp.close( );
 			}
 		}
+		// determine dimensions of the grid.
 		grid_size = (int) sqrt( num_tasks );
-		// Verify rows are appropriate.
+		
+		// Verify matrix size is appropriate.
 		if( size % grid_size != 0 )
 		{
 			if( task_id == 0 )
@@ -154,7 +176,7 @@ int main( int argc, char** argv )
 			MPI_Finalize( );
 			return 1;
 		}
-
+		// determine 
 		sub_dim = size / grid_size;
 		sub_size = sub_dim * sub_dim;
 		A = allocateSquareMatrix( sub_dim );
@@ -182,15 +204,6 @@ int main( int argc, char** argv )
 		// If master task Allocate and distribute sub matrices.
 		if( task_id == 0 )
 		{
-			// Allocate and fill Matrices
-			if( argc == 2 )
-			{
-				masterA = allocateSquareMatrix( size );
-				masterB = allocateSquareMatrix( size );
-				fillMatrix( masterA, size );
-				fillMatrix( masterB, size );
-			}
-
 			// Obtain master's submatrix
 			A = subMatrix( masterA, myCoords[0] * sub_dim, myCoords[1] * sub_dim, sub_dim );
 			B = subMatrix( masterB, myCoords[0] * sub_dim, myCoords[1] * sub_dim, sub_dim );
@@ -221,14 +234,9 @@ int main( int argc, char** argv )
 					}
 				}
 			}
-			// Wait for all of the receives to complete
-			// on the slaves.
-		//	for( int i = 1; i < num_tasks; i++ )
-		//	{
-		//		MPI_Status wait_status;
-		//		MPI_Wait( &requestsA[i], &wait_status );
-		//		MPI_Wait( &requestsB[i], &wait_status );
-		//	}
+
+			deallocateSquareMatrix( masterA );
+			deallocateSquareMatrix( masterB );
 			
 			// Wait until all tasks are here.
 			MPI_Barrier( MPI_COMM_WORLD );
@@ -303,11 +311,15 @@ int main( int argc, char** argv )
 			MPI_Barrier( MPI_COMM_WORLD );
 		}
 		
+		// end the timer.
 		if( task_id == 0 )
 		{
 			end_time = MPI_Wtime( );
 		}
 
+		// If main task, collect from the other matrcies
+		// their results and put into a result matrix for
+		// printing/output.
 		if( task_id == 0 )
 		{
 			int** result = allocateSquareMatrix( size );
@@ -320,21 +332,34 @@ int main( int argc, char** argv )
 				MPI_Recv( &C[0][0], sub_size, MPI_INT, i, COLLECT, MPI_COMM_WORLD, &recv_status );
 				fillMatrix( result, C, coords[0] * sub_dim, coords[1] * sub_dim, sub_dim );
 			}
+
+			// if size only mode output to stdout (if not 
+			// commented).
 			if( argc == 2 )
 			{
 				//printMatrix( result, size );
 			}
+			// Otherwise, output to output file.
 			else
 			{
 				printMatrix( out, result, size );
 			}
+			// deallocate main task matrices
+			deallocateSquareMatrix( result );
+			
 			
 		}
+		// If not the main task, send your result matrix
+		// to the main task.
 		else
 		{
 			MPI_Send( &C[0][0], sub_size, MPI_INT, 0, COLLECT, MPI_COMM_WORLD );
 		}
 
+		// deallocate the remaining matrices
+		deallocateSquareMatrix( A );
+		deallocateSquareMatrix( B );
+		deallocateSquareMatrix( C );
 	}
 
 	// Print results
@@ -364,6 +389,8 @@ int** allocateSquareMatrix( int size )
     return array;
 }
 
+// deallocate matrix (Doesn't really need to be it's 
+// own function).
 void deallocateSquareMatrix( int** matrix )
 {
 	delete[] matrix;
@@ -445,7 +472,7 @@ void zeroMatrix( int** matrix, int dimensions )
 	}
 }
 
-// Prints matrix
+// Prints matrix to stdout
 void printMatrix( int** matrix, int dimensions )
 {
 	for( int i = 0; i < dimensions; i++ )
@@ -459,6 +486,7 @@ void printMatrix( int** matrix, int dimensions )
 	}
 }
 
+// Prints matrix to filename.
 void printMatrix( string filename, int** matrix, int dimensions )
 {
 	ofstream output( filename );
@@ -487,6 +515,8 @@ int** addMatrices( int** A, int** B, int dimensions )
 	return result;
 }
 
+// read matrix from filename.  See README.md for
+// file format.
 void readInput( string filename, int** &matrix, int &size )
 {
 	ifstream input( filename );
