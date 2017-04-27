@@ -57,4 +57,9 @@ format as the input files.
 
 *Note:* The number of tasks must be a perfect square
 and Size must be a multiple of the square root of the
-number of tasks. 
+number of tasks.
+
+*Note:* Program will most likely not work if arguments
+are improperly set.  Inputs are not checked for validity
+outside of ensuring that the numbers conform to the size
+of the processor grid.
