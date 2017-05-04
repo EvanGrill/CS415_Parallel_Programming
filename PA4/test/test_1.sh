@@ -1,4 +1,8 @@
 #!/bin/bash
+# While this is "techincally" sbatch compatible, it's not
+# designed to use sbatch.  Instead, it just makes calls to
+# srun successively to ensure that only one job is queued
+# at a time.
 srun -n 1 --mpi=pmi2 ./build/main 120 >> output.csv
 srun -n 1 --mpi=pmi2 ./build/main 240 >> output.csv
 srun -n 1 --mpi=pmi2 ./build/main 360 >> output.csv
